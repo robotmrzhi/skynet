@@ -76,10 +76,13 @@ add_node(struct timer *T,struct timer_node *node) {
 	uint32_t time=node->expire;
 	uint32_t current_time=T->time;
 	
+
+	//判断差值是否在255范围内 &前8位 看后面24位是否相同 
 	if ((time|TIME_NEAR_MASK)==(current_time|TIME_NEAR_MASK)) {
 		link(&T->near[time&TIME_NEAR_MASK],node);
 	} else {
 		int i;
+		//判断差值在9-14， 15-20， 21-26,27-32（位） 那个范围内 地位全部置为1 判断高位是否相同
 		uint32_t mask=TIME_NEAR << TIME_LEVEL_SHIFT;
 		for (i=0;i<3;i++) {
 			if ((time|(mask-1))==(current_time|(mask-1))) {
@@ -87,7 +90,7 @@ add_node(struct timer *T,struct timer_node *node) {
 			}
 			mask <<= TIME_LEVEL_SHIFT;
 		}
-
+		//除了在time 溢出的情况下 一般[0]不放置元素
 		link(&T->t[i][((time>>(TIME_NEAR_SHIFT + i*TIME_LEVEL_SHIFT)) & TIME_LEVEL_MASK)],node);	
 	}
 }
@@ -124,7 +127,7 @@ timer_shift(struct timer *T) {
 	} else {
 		uint32_t time = ct >> TIME_NEAR_SHIFT;
 		int i=0;
-
+		 //判断各个位节点是否为全部为0
 		while ((ct & (mask-1))==0) {
 			int idx=time & TIME_LEVEL_MASK;
 			if (idx!=0) {
